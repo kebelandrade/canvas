@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HTML5 Canvas</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        #mesa-dibujo {
+            border: 1px solid #000000;
+        }
+
+        #colores {
+            display: flex;
+            width: 100%;
+            padding: 10px
+        }
+
+        #colores .color {
+            width: 35px;
+            height: 35px;
+            margin-left: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+
+        #colores .color:hover {
+            border: 2px solid #000;
+        }
+
+        #colores .color.negro {
+            background-color: black;
+        }
+
+        #colores .color.azul {
+            background-color: #00F;
+        }
+
+        #colores .color.rojo {
+            background-color: #ff0000;
+        }
+
+        #colores .color.verde {
+            background-color: #0F0;
+        }
+
+    </style>
+</head>
+<body>
+
+
+
+<canvas id="mesa-dibujo" width="800" height="400"></canvas>
+
+
+<div id="colores">
+    <div class="color negro" onclick="cambiar_color('#000')"></div>
+    <div class="color azul" onclick="cambiar_color('#00F')"></div>
+    <div class="color rojo" onclick="cambiar_color('#F00')"></div>
+    <div class="color verde" onclick="cambiar_color('#0F0')"></div>
+</div>
+
+<div id="grosor">
+    <div>
+        <label for="g">Grosor</label>
+        <input type="number" id="g" onchange="grosor(value)">
+    </div>
+</div>
+
+
+
+<script>
+
+    const ws = new WebSocket("ws://127.0.0.1:4000");
+    let coordenadasAgrupadas = [];
+
+    ws.onopen = function (data) {
+      console.log("Conexión abierta");
+      let mostrar = JSON.parse(data.data);
+      contexto.beginPath();
+      for (let i = 0; i < mostrar.length; i++) {
+            contexto.lineTo(mostrar[i].x, mostrar[i].y);
+            contexto.stroke();
+      }
+
+    };
+
+    ws.onmessage = function (data) {
+        let info = JSON.parse(data.data);
+        contexto.beginPath();
+        for (let i = 0; i < info.length; i++){
+            contexto.strokeStyle = info.color;
+            contexto.lineWidth = info.grosor;
+            contexto.lineTo(info[i].x, info[i].y);
+            console.log(info[i].x, info[i].y);
+            contexto.stroke();
+        }
+
+      //  if (info.comenzar) {
+        //    contexto.beginPath();
+        // }
+       // contexto.strokeStyle = info.color;
+       // contexto.lineTo(info.x, info.y);
+       // contexto.stroke();
+    };
+
+    let canvas = document.getElementById("mesa-dibujo");
+    let contexto = canvas.getContext("2d");
+    let presionado = false;
+    canvas.width = window.innerWidth;
+
+    canvas.addEventListener('mousedown', function (e) {
+        presionado = true;
+        contexto.beginPath();
+        let objeto = {
+            "comenzar": true
+        };
+        ws.send(JSON.stringify(objeto))
+
+    });
+
+    canvas.addEventListener('mouseup', function (e) {
+       presionado = false;
+       ws.send(JSON.stringify(coordenadasAgrupadas));
+       coordenadasAgrupadas = [];
+    });
+
+    canvas.addEventListener('mousemove', function (e) {
+
+        if (presionado){
+            contexto.lineTo(e.x, e.y);
+            contexto.stroke();
+            let datos = {
+                x: e.x,
+                y: e.y,
+                color: contexto.strokeStyle,
+                grosor: contexto.lineWidth
+            };
+            coordenadasAgrupadas.push(datos);
+
+            // ws.send(JSON.stringify(datos));
+        }
+
+
+    });
+
+
+    function cambiar_color(color) {
+        contexto.strokeStyle = color;
+    }
+
+    function grosor(value) {
+        contexto.lineWidth = value;
+    }
+
+    /*contexto.moveTo(0,0);
+    contexto.lineTo(150,150);
+    contexto.stroke();
+
+    contexto.lineTo(150, 200);
+    contexto.stroke();
+
+    contexto.beginPath();
+
+    contexto.arc(150, 150, 50, 0, 2 * Math.PI);
+    contexto.stroke() */
+
+</script>
+</body>
+</html>

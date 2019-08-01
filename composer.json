@@ -1,0 +1,13 @@
+{
+    "name": "andrades/canvas",
+    "license": "MTP",
+    "authors": [
+        {
+            "name": "kebelandrade",
+            "email": "andradekebel97@gmail.com"
+        }
+    ],
+    "require": {
+        "cboden/ratchet": "^0.4.1"
+    }
+}
